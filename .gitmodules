@@ -4,3 +4,6 @@
 [submodule "engine/Chess.jl"]
 	path = engine/Chess.jl
 	url = https://github.com/abahm/Chess.jl
+[submodule "Stockfish"]
+	path = Stockfish
+	url = https://github.com/official-stockfish/Stockfish.git
