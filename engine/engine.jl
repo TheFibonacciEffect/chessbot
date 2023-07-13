@@ -1,10 +1,39 @@
 using Chess
+using Chess.Book
 using Infiltrator
-function calculate_best_move(board)
-    # Add your implementation for calculating the best move here
+
+function attacked_but_undefended(board, color)
+	attacker = -color  # The opposite color
+	
+	# Find all attacked squares
+	attacked = SS_EMPTY  # The empty square set
+	for s ∈ pieces(board, attacker)
+		attacked = attacked ∪ attacksfrom(board, s)
+	end
+	
+	# Find all defended squares
+	defended = SS_EMPTY
+	for s ∈ pieces(board, color)
+		defended = defended ∪ attacksfrom(board, s)
+	end
+	
+	# Return all attacked, but undefended squares containing pieces of
+	# the desired color:
+	attacked ∩ -defended ∩ pieces(board, color)
+end
+
+
+function calculate_best_move(board_)
     # Return the best move as a string in UCI format
-    mv = moves(board) |> first 
-    domove!(board, mv)
+
+    book_moves = findbookentries(board_)
+    if isempty(book_moves)
+        mv = moves(board_) |> rand 
+        domove!(board_, mv)
+        return mv |> tostring
+    end
+    mv = Move(book_moves[1].move)
+    domove!(board_, mv)
     return mv |> tostring
 end
     
@@ -35,21 +64,9 @@ function process_commands()
         elseif startswith(command, "position")
             position_command = split(command, ' ')
             if length(position_command) > 2 && position_command[3] == "moves"
-                println(position_command)
                 mvs = position_command[4:end]
                 board = startboard()
-                # println(mvs)
-                # println(String.(mvs))
-                # println(String.(mvs) .|> movefromstring)
                 domoves!(board, String.(mvs)...)
-                # println(board)
-                # board = @startboard eval(join(position_command[4:end], " "))
-                # # movefromstring(s::String)
-                # #  = move(board, s)
-                # board = startboard()
-                # for move in position_command[4:end]
-                #     board = movefromstring(board, move)
-                # end
             else 
                 board = startboard()
             end
