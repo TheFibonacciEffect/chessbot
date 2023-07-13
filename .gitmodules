@@ -1,9 +1,6 @@
 [submodule "lichess-bot"]
 	path = lichess-bot
 	url = https://github.com/lichess-bot-devs/lichess-bot.git
-[submodule "engine/Chess.jl"]
-	path = engine/Chess.jl
-	url = https://github.com/abahm/Chess.jl
 [submodule "Stockfish"]
 	path = Stockfish
 	url = https://github.com/official-stockfish/Stockfish.git
