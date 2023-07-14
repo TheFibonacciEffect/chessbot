@@ -13,6 +13,7 @@ function moves_to_square(B, sq)
             push!(mvs, mv)
         end
     end
+    return mvs
 end
 
 function most_value(B, ss)
@@ -106,6 +107,18 @@ function calculate_best_move(board_)
         return mv |> tostring
     end
 
+    # capture queen if possible
+    c = sidetomove(board_)
+    mvs = []
+    for sq in queens(board_,-c)
+        mvs = [mvs; moves_to_square(board_, sq)]
+    end
+    if !isempty(mvs)
+        println("capture queen ", mvs[1])
+        mv = mvs[1]
+        domove!(board_, mv)
+        return mv |> tostring
+    end
     # do a capture if possible
     hanging = find_hanging(board_)
     if !isempty(hanging)
