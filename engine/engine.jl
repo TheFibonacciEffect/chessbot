@@ -2,7 +2,6 @@ using Chess
 using Chess.Book
 using Infiltrator
 
-
 # piece_values = (:BISHOP => 3, :KNIGHT => 3, :PAWN => 1, :QUEEN => 9, :ROOK => 5, :KING => 1000)
 piece_values = Dict(BISHOP => 3, KNIGHT => 3, PAWN => 1, QUEEN => 9, ROOK => 5, KING => 1000)
 
@@ -228,9 +227,9 @@ function find_best_move(board)
     best_eval = -Inf
     best_move = nothing
     for move in moves(board)
-        u = domove!(board, move)
+        u = domove(board, move)
         eval = alpha_beta(board, MAX_DEPTH, -Inf, Inf, false)
-        undomove!(board, u)
+        # undomove(board, u)
         if eval > best_eval
             best_eval = eval
             best_move = move
@@ -255,8 +254,9 @@ end
 #     # Implement your own move undo logic here.
 # end
 
-board = fromfen("rnbqkbnr/ppppp1pp/8/5p2/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1") 
-find_best_move(board)
+# board = fromfen("r1bqk2r/pp3pbp/3pp1p1/2p4P/2PnP3/3P2P1/PP2NPB1/R1BQK2R b KQkq - 1 11") 
+# @time find_best_move(board)
+
 # Wait for UCI commands from the GUI and process them
 function process_commands()
     board = startboard()

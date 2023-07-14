@@ -1,2 +1,2 @@
 #!/bin/bash
-julia --project=.. /home/caspar/Documents/code/chessbot/engine/engine.jl
+julia --threads 4 --project=.. /home/caspar/Documents/code/chessbot/engine/engine.jl
