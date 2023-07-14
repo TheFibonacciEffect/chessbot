@@ -6,173 +6,257 @@ using Infiltrator
 # piece_values = (:BISHOP => 3, :KNIGHT => 3, :PAWN => 1, :QUEEN => 9, :ROOK => 5, :KING => 1000)
 piece_values = Dict(BISHOP => 3, KNIGHT => 3, PAWN => 1, QUEEN => 9, ROOK => 5, KING => 1000)
 
-function moves_to_square(B, sq)
-    mvs = []
-    for mv in moves(B)
-        if to(mv) == sq
-            push!(mvs, mv)
-        end
-    end
-    return mvs
-end
+# function moves_to_square(B, sq)
+#     mvs = []
+#     for mv in moves(B)
+#         if to(mv) == sq
+#             push!(mvs, mv)
+#         end
+#     end
+#     return mvs
+# end
 
-function most_value(B, ss)
-    max_val = 0
-    max_sq = nothing
-    for sq in ss
-        sq ∈ emptysquares(B) && continue
-        p = pieceon(B, sq)
-        pty = ptype(p)
-        val = piece_values[pty]
-        if val > max_val
-            max_val = val
-            max_sq = sq
-        end
-    end
-    return max_sq
-end
+# function most_value(B, ss)
+#     max_val = 0
+#     max_sq = nothing
+#     for sq in ss
+#         sq ∈ emptysquares(B) && continue
+#         p = pieceon(B, sq)
+#         pty = ptype(p)
+#         val = piece_values[pty]
+#         if val > max_val
+#             max_val = val
+#             max_sq = sq
+#         end
+#     end
+#     return max_sq
+# end
 
-function attacked_but_undefended(board, color)
-	attacker = -color  # The opposite color
+# function attacked_but_undefended(board, color)
+# 	attacker = -color  # The opposite color
 	
-	# Find all attacked squares
-	attacked = SS_EMPTY  # The empty square set
-	for s ∈ pieces(board, attacker)
-		attacked = attacked ∪ attacksfrom(board, s)
-	end
+# 	# Find all attacked squares
+# 	attacked = SS_EMPTY  # The empty square set
+# 	for s ∈ pieces(board, attacker)
+# 		attacked = attacked ∪ attacksfrom(board, s)
+# 	end
 	
-	# Find all defended squares
-	defended = SS_EMPTY
-	for s ∈ pieces(board, color)
-		defended = defended ∪ attacksfrom(board, s)
-	end
+# 	# Find all defended squares
+# 	defended = SS_EMPTY
+# 	for s ∈ pieces(board, color)
+# 		defended = defended ∪ attacksfrom(board, s)
+# 	end
 	
-	# Return all attacked, but undefended squares containing pieces of
-	# the desired color:
-	attacked ∩ -defended ∩ pieces(board, color)
-end
+# 	# Return all attacked, but undefended squares containing pieces of
+# 	# the desired color:
+# 	attacked ∩ -defended ∩ pieces(board, color)
+# end
 
-function find_hanging(B)
-    # it doesn't check again if the piece is still hanging after the move
-    colour = sidetomove(B)
-    hanging_pieces = attacked_but_undefended(B, colour)
-    if isempty(hanging_pieces)
-        return []
-    end
-    # find the pieces on the squares
+# function find_hanging(B)
+#     # it doesn't check again if the piece is still hanging after the move
+#     colour = sidetomove(B)
+#     hanging_pieces = attacked_but_undefended(B, colour)
+#     if isempty(hanging_pieces)
+#         return []
+#     end
+#     # find the pieces on the squares
 
     
-    # choose one at random
-    mvs = []
-    for sq = hanging_pieces
-        for mv in moves(B)
-            if from(mv) == sq #move the piece away
-                push!(mvs, mv)
+#     # choose one at random
+#     mvs = []
+#     for sq = hanging_pieces
+#         for mv in moves(B)
+#             if from(mv) == sq #move the piece away
+#                 push!(mvs, mv)
+#             end
+#         end
+#     end
+#     println("move hanging pieces: ", mvs)
+#     return mvs
+# end
+
+# function find_captures(B)
+#     colour = sidetomove(B)
+#     hanging_pieces = attacked_but_undefended(B, -colour)
+#     if isempty(hanging_pieces)
+#         return []
+#     end
+
+#     # choose one at random
+#     mvs = []
+#     for sq = hanging_pieces
+#         for mv in moves(B)
+#             if to(mv) == sq #move the piece away
+#                 push!(mvs, mv)
+#             end
+#         end
+#     end
+#     println("capture hanging pieces: ", mvs)
+#     return mvs
+# end
+
+# function find_checks(b)
+#     checks = filter(m -> ischeck(domove(b, m)) && isempty(attacked_but_undefended(domove(b, m),sidetomove(b))), moves(b))
+#     return checks
+# end
+
+# function find_attacks(b)
+#     threats = filter(m -> !isempty(attacked_but_undefended(domove(b, m),-sidetomove(b))) && isempty(attacked_but_undefended(domove(b, m),sidetomove(b))), moves(b))
+#     return threats
+# end
+
+# function calculate_best_move(board_)
+#     # Return the best move as a string in UCI format
+
+#     # do a book move if possible
+#     book_moves = findbookentries(board_)
+#     if !isempty(book_moves)
+#         println("book move ", book_moves[1])
+#         mv = Move(book_moves[1].move)
+#         domove!(board_, mv)
+#         return mv |> tostring
+#     end
+
+#     # capture queen if possible
+#     c = sidetomove(board_)
+#     mvs = []
+#     for sq in queens(board_,-c)
+#         mvs = [mvs; moves_to_square(board_, sq)]
+#     end
+#     if !isempty(mvs)
+#         println("capture queen ", mvs[1])
+#         mv = mvs[1]
+#         domove!(board_, mv)
+#         return mv |> tostring
+#     end
+#     # do a capture if possible
+#     captures = find_captures(board_)
+#     if !isempty(captures)
+#         println("capture ", captures[1])
+#         mv = captures[1]
+#         domove!(board_, mv)
+#         return mv |> tostring
+#     end
+
+#     # do check if possible
+
+#     checks = find_checks(board_)
+#     if !isempty(checks)
+#         mv = rand(checks)
+#         println("check ", mv)
+#         domove!(board_, mv)
+#         return mv |> tostring
+#     end
+    
+#     # find threats
+#     threats = find_attacks(board_)
+#     if !isempty(threats)
+#         mv = rand(threats)
+#         println("threat ", mv)
+#         domove!(board_, mv)
+#         return mv |> tostring
+#     end
+    
+#     hanging = find_hanging(board_)
+#     if !isempty(hanging)
+#         println("move ", hanging[1])
+#         mv = hanging[1]
+#         domove!(board_, mv)
+#         return mv |> tostring
+#     end
+
+#     # do a random Move
+#     mv = moves(board_) |> rand 
+#     domove!(board_, mv)
+#     println("random move ", mv)
+#     return mv |> tostring
+# end
+
+
+const MAX_DEPTH = 3
+
+function evaluate_position(board)
+    # Function to evaluate the current position and return a score
+    # based on factors like piece values, board control, etc.
+    # Implement your own evaluation logic here.
+    val = 0
+    c = sidetomove(board)
+    for s ∈ pieces(board, c)
+        val += piece_values[ptype(pieceon(board, s))]
+    end
+    for s ∈ pieces(board, c)
+        val -= piece_values[ptype(pieceon(board, s))]
+    end
+    return 0
+end
+
+function alpha_beta(board, depth, alpha, beta, maximizing_player_colour)
+    if depth == 0
+        return evaluate_position(board)
+    end
+    
+    if maximizing_player_colour == sidetomove(board)
+        max_eval = -Inf
+        for move in moves(board)
+            u = domove!(board, move)
+            eval = alpha_beta(board, depth - 1, alpha, beta, false)
+            undomove!(board, u)
+            max_eval = max(max_eval, eval)
+            alpha = max(alpha, eval)
+            if beta <= alpha
+                break
             end
         end
-    end
-    println("move hanging pieces: ", mvs)
-    return mvs
-end
-
-function find_captures(B)
-    colour = sidetomove(B)
-    hanging_pieces = attacked_but_undefended(B, -colour)
-    if isempty(hanging_pieces)
-        return []
-    end
-
-    # choose one at random
-    mvs = []
-    for sq = hanging_pieces
-        for mv in moves(B)
-            if to(mv) == sq #move the piece away
-                push!(mvs, mv)
+        return max_eval
+    else
+        min_eval = Inf
+        for move in moves(board)
+            u = domove!(board, move)
+            eval = alpha_beta(board, depth - 1, alpha, beta, true)
+            undomove!(board, u)
+            min_eval = min(min_eval, eval)
+            beta = min(beta, eval)
+            if beta <= alpha
+                break
             end
         end
+        return min_eval
     end
-    println("capture hanging pieces: ", mvs)
-    return mvs
 end
 
-function find_checks(b)
-    checks = filter(m -> ischeck(domove(b, m)) && isempty(attacked_but_undefended(domove(b, m),sidetomove(b))), moves(b))
-    return checks
+function find_best_move(board)
+    best_eval = -Inf
+    best_move = nothing
+    for move in moves(board)
+        u = domove!(board, move)
+        eval = alpha_beta(board, MAX_DEPTH, -Inf, Inf, false)
+        undomove!(board, u)
+        if eval > best_eval
+            best_eval = eval
+            best_move = move
+        end
+    end
+    return best_move |> tostring
 end
 
-function find_attacks(b)
-    threats = filter(m -> !isempty(attacked_but_undefended(domove(b, m),-sidetomove(b))) && isempty(attacked_but_undefended(domove(b, m),sidetomove(b))), moves(b))
-    return threats
-end
+# function generate_moves(board)
+#     # Function to generate all possible legal moves on the current board.
+#     # Implement your own move generation logic here.
+#     return []
+# end
 
-function calculate_best_move(board_)
-    # Return the best move as a string in UCI format
+# function make_move(board, move)
+#     # Function to apply the given move on the board.
+#     # Implement your own move application logic here.
+# end
 
-    # do a book move if possible
-    book_moves = findbookentries(board_)
-    if !isempty(book_moves)
-        println("book move ", book_moves[1])
-        mv = Move(book_moves[1].move)
-        domove!(board_, mv)
-        return mv |> tostring
-    end
+# function unmake_move(board, move)
+#     # Function to undo the given move on the board.
+#     # Implement your own move undo logic here.
+# end
 
-    # capture queen if possible
-    c = sidetomove(board_)
-    mvs = []
-    for sq in queens(board_,-c)
-        mvs = [mvs; moves_to_square(board_, sq)]
-    end
-    if !isempty(mvs)
-        println("capture queen ", mvs[1])
-        mv = mvs[1]
-        domove!(board_, mv)
-        return mv |> tostring
-    end
-    # do a capture if possible
-    captures = find_captures(board_)
-    if !isempty(captures)
-        println("capture ", captures[1])
-        mv = captures[1]
-        domove!(board_, mv)
-        return mv |> tostring
-    end
-
-    # do check if possible
-
-    checks = find_checks(board_)
-    if !isempty(checks)
-        mv = rand(checks)
-        println("check ", mv)
-        domove!(board_, mv)
-        return mv |> tostring
-    end
-    
-    # find threats
-    threats = find_attacks(board_)
-    if !isempty(threats)
-        mv = rand(threats)
-        println("threat ", mv)
-        domove!(board_, mv)
-        return mv |> tostring
-    end
-    
-    hanging = find_hanging(board_)
-    if !isempty(hanging)
-        println("move ", hanging[1])
-        mv = hanging[1]
-        domove!(board_, mv)
-        return mv |> tostring
-    end
-
-    # do a random move
-    mv = moves(board_) |> rand 
-    domove!(board_, mv)
-    println("random move ", mv)
-    return mv |> tostring
-end
-    
-
+board = fromfen("rnbqkbnr/ppppp1pp/8/5p2/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1") 
+find_best_move(board)
 # Wait for UCI commands from the GUI and process them
 function process_commands()
     board = startboard()
@@ -211,7 +295,7 @@ function process_commands()
 
             # Update the board based on the position command received earlier
             # (Code for updating the board goes here)
-            best_move = calculate_best_move(board)
+            best_move = find_best_move(board)
             println("bestmove $best_move")
         elseif startswith(command, "setoption")
             # Handle options as needed
