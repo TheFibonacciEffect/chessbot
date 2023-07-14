@@ -138,22 +138,21 @@ function calculate_best_move(board_)
         return mv |> tostring
     end
 
-    
-    # find threats
-    threats = find_attacks(board_)
-    if !isempty(threats)
-        mv = rand(threats)
-        println("threat ", mv)
-        domove!(board_, mv)
-        return mv |> tostring
-    end
-
     # do check if possible
 
     checks = find_checks(board_)
     if !isempty(checks)
         mv = rand(checks)
         println("check ", mv)
+        domove!(board_, mv)
+        return mv |> tostring
+    end
+    
+    # find threats
+    threats = find_attacks(board_)
+    if !isempty(threats)
+        mv = rand(threats)
+        println("threat ", mv)
         domove!(board_, mv)
         return mv |> tostring
     end
