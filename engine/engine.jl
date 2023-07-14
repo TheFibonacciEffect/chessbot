@@ -4,7 +4,32 @@ using Infiltrator
 
 
 # piece_values = (:BISHOP => 3, :KNIGHT => 3, :PAWN => 1, :QUEEN => 9, :ROOK => 5, :KING => 1000)
-# piece_values = Dict(BISHOP => 3, KNIGHT => 3, PAWN => 1, QUEEN => 9, ROOK => 5, KING => 1000)
+piece_values = Dict(BISHOP => 3, KNIGHT => 3, PAWN => 1, QUEEN => 9, ROOK => 5, KING => 1000)
+
+function moves_to_square(B, sq)
+    mvs = []
+    for mv in moves(B)
+        if to(mv) == sq
+            push!(mvs, mv)
+        end
+    end
+end
+
+function most_value(B, ss)
+    max_val = 0
+    max_sq = nothing
+    for sq in ss
+        sq ∈ emptysquares(B) && continue
+        p = pieceon(B, sq)
+        pty = ptype(p)
+        val = piece_values[pty]
+        if val > max_val
+            max_val = val
+            max_sq = sq
+        end
+    end
+    return max_sq
+end
 
 function attacked_but_undefended(board, color)
 	attacker = -color  # The opposite color
@@ -26,26 +51,41 @@ function attacked_but_undefended(board, color)
 	attacked ∩ -defended ∩ pieces(board, color)
 end
 
-function findcaptures(B)
+function find_hanging(B)
+    # it doesn't check again if the piece is still hanging after the move
     colour = sidetomove(B)
     hanging_pieces = attacked_but_undefended(B, colour)
     if isempty(hanging_pieces)
         return []
     end
     # find the pieces on the squares
-    # for sq in hanging_pieces
-    #     p = pieceon(B, sq)
-    #     pty = ptype(p)
-    #     val = piece_values[pty]
-    #     println(p, " on ", sq)
-    # end
+
     
     # choose one at random
     mvs = []
-    @infiltrate
     for sq = hanging_pieces
         for mv in moves(B)
             if from(mv) == sq #move the piece away
+                push!(mvs, mv)
+            end
+        end
+    end
+    println("move hanging pieces: ", mvs)
+    return mvs
+end
+
+function find_captures(B)
+    colour = sidetomove(B)
+    hanging_pieces = attacked_but_undefended(B, -colour)
+    if isempty(hanging_pieces)
+        return []
+    end
+
+    # choose one at random
+    mvs = []
+    for sq = hanging_pieces
+        for mv in moves(B)
+            if to(mv) == sq #move the piece away
                 push!(mvs, mv)
             end
         end
@@ -60,13 +100,22 @@ function calculate_best_move(board_)
     # do a book move if possible
     book_moves = findbookentries(board_)
     if !isempty(book_moves)
+        println("book move ", book_moves[1])
         mv = Move(book_moves[1].move)
         domove!(board_, mv)
         return mv |> tostring
     end
 
     # do a capture if possible
-    captures = findcaptures(board_)
+    hanging = find_hanging(board_)
+    if !isempty(hanging)
+        println("move ", hanging[1])
+        mv = hanging[1]
+        domove!(board_, mv)
+        return mv |> tostring
+    end
+
+    captures = find_captures(board_)
     if !isempty(captures)
         println("capture ", captures[1])
         mv = captures[1]
@@ -79,6 +128,7 @@ function calculate_best_move(board_)
     # do a random move
     mv = moves(board_) |> rand 
     domove!(board_, mv)
+    println("random move ", mv)
     return mv |> tostring
 end
     
