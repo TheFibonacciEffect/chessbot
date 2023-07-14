@@ -2,6 +2,10 @@ using Chess
 using Chess.Book
 using Infiltrator
 
+
+# piece_values = (:BISHOP => 3, :KNIGHT => 3, :PAWN => 1, :QUEEN => 9, :ROOK => 5, :KING => 1000)
+# piece_values = Dict(BISHOP => 3, KNIGHT => 3, PAWN => 1, QUEEN => 9, ROOK => 5, KING => 1000)
+
 function attacked_but_undefended(board, color)
 	attacker = -color  # The opposite color
 	
@@ -22,17 +26,58 @@ function attacked_but_undefended(board, color)
 	attacked ∩ -defended ∩ pieces(board, color)
 end
 
+function findcaptures(B)
+    colour = sidetomove(B)
+    hanging_pieces = attacked_but_undefended(B, colour)
+    if isempty(hanging_pieces)
+        return []
+    end
+    # find the pieces on the squares
+    # for sq in hanging_pieces
+    #     p = pieceon(B, sq)
+    #     pty = ptype(p)
+    #     val = piece_values[pty]
+    #     println(p, " on ", sq)
+    # end
+    
+    # choose one at random
+    mvs = []
+    @infiltrate
+    for sq = hanging_pieces
+        for mv in moves(B)
+            if from(mv) == sq #move the piece away
+                push!(mvs, mv)
+            end
+        end
+    end
+    println("capture hanging pieces: ", mvs)
+    return mvs
+end
 
 function calculate_best_move(board_)
     # Return the best move as a string in UCI format
 
+    # do a book move if possible
     book_moves = findbookentries(board_)
-    if isempty(book_moves)
-        mv = moves(board_) |> rand 
+    if !isempty(book_moves)
+        mv = Move(book_moves[1].move)
         domove!(board_, mv)
         return mv |> tostring
     end
-    mv = Move(book_moves[1].move)
+
+    # do a capture if possible
+    captures = findcaptures(board_)
+    if !isempty(captures)
+        println("capture ", captures[1])
+        mv = captures[1]
+        domove!(board_, mv)
+        return mv |> tostring
+    end
+    # checks
+    # filter(m -> ischeck(domove(b, m)), moves(b))
+    
+    # do a random move
+    mv = moves(board_) |> rand 
     domove!(board_, mv)
     return mv |> tostring
 end
