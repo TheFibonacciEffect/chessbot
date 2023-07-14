@@ -172,8 +172,6 @@ end
 # end
 
 
-const MAX_DEPTH = 3
-
 function evaluate_position(board)
     # Function to evaluate the current position and return a score
     # based on factors like piece values, board control, etc.
@@ -186,10 +184,21 @@ function evaluate_position(board)
     for s ∈ pieces(board, -c)
         val -= piece_values[ptype(pieceon(board, s))]
     end
+    if ischeck(board)
+        val -= 5
+    end
+    hanging_pieces = attacked_but_undefended(board, c)
+    if !isempty(hanging_pieces)
+        val -= 10
+    end
+    if ischeckmate(board)
+        val -= Inf
+    end
     return val
 end
 
 function alpha_beta(board, depth, alpha, beta, maximizing_player)
+    global neval += 1
     if depth == 0 || isterminal(board)
         return evaluate_position(board)
     end
@@ -198,26 +207,26 @@ function alpha_beta(board, depth, alpha, beta, maximizing_player)
         max_eval = -Inf
         for move in moves(board)
             u = domove!(board, move)
-            eval = alpha_beta(board, depth - 1, alpha, beta, false)
+            eval = alpha_beta(board, depth - 1, alpha, beta, false) #thre might be a minus sign missing here
             undomove!(board, u)
             max_eval = max(max_eval, eval)
             alpha = max(alpha, max_eval)
-            if beta < max_eval
-                break
-            end
+            # if beta < max_eval
+            #     break
+            # end
         end
         return max_eval
     else
         min_eval = Inf
         for move in moves(board)
             u = domove!(board, move)
-            eval = alpha_beta(board, depth - 1, alpha, beta, true)
+            eval = -alpha_beta(board, depth - 1, alpha, beta, true) #thre might be a minus sign missing here
             undomove!(board, u)
             min_eval = min(min_eval, eval)
             beta = min(beta, eval)
-            if min_eval < alpha
-                break
-            end
+            # if min_eval < alpha
+            #     break
+            # end
         end
         return min_eval
     end
@@ -226,7 +235,8 @@ end
 function find_best_move(board)
     best_eval = -Inf
     best_move = nothing
-    for move in union(find_defense(board),find_captures(board),find_checks(board), shuffle(moves(board)))
+    # for move in union(find_defense(board),find_captures(board),find_checks(board), shuffle(moves(board)))
+    for move in shuffle(moves(board))
         u = domove!(board, move)
         eval = alpha_beta(board, MAX_DEPTH, -Inf, Inf, false)
         undomove!(board, u)
@@ -294,6 +304,7 @@ function process_commands()
 
             # Update the board based on the position command received earlier
             # (Code for updating the board goes here)
+            println("current evaluation", evaluate_position(board))
             best_move = find_best_move(board)
             println("bestmove $best_move")
         elseif startswith(command, "setoption")
@@ -312,27 +323,36 @@ function process_commands()
     end
 end
 
-@show board = fromfen("rnbqkbnr/pp1p1ppp/8/3pp3/3P4/5Q2/PPPP1PPP/RNB1KBNR w KQkq - 0 1")
-# board = fromfen("r1bqk2r/pp3pbp/3pp1p1/2p4P/2PnP3/3P2P1/PP2NPB1/R1BQK2R b KQkq - 1 11") 
-@show find_best_move(board)
-# Start processing UCI commands
-# process_commands()
-find_defense(board)
-find_captures(board)
-find_checks(board)
-attacked_but_undefended(board, sidetomove(board)) # hanging pieces
-attacked_but_undefended(board, -sidetomove(board)) # threats
-
-
-function find_moves_to_squareset(b,ss)
-    ml = []
-    for sq in ss
-        for mv in moves(b)
-            if to(mv) == sq
-                push!(ml, mv)
+const MAX_DEPTH = 1
+neval = 0
+debug = true
+if debug
+# @show board = fromfen("rnbqkbnr/pp1p1ppp/8/3pp3/3P4/5Q2/PPPP1PPP/RNB1KBNR w KQkq - 0 1")
+    # @show board = fromfen("r1bqk2r/pp3pbp/3pp1p1/2p4P/2PnP3/3P2P1/PP2NPB1/R1BQK2R b KQkq - 1 11") 
+    print("paste fen: ") # 8/1k6/3q4/4P3/5P2/2K5/8/8 b - - 0 1
+    @show board = fromfen(readline()) 
+    @show evaluate_position(board)
+    @show find_best_move(board)
+    @show neval
+    
+    find_defense(board)
+    find_captures(board)
+    find_checks(board)
+    attacked_but_undefended(board, sidetomove(board)) # hanging pieces
+    attacked_but_undefended(board, -sidetomove(board)) # threats
+    function find_moves_to_squareset(b,ss)
+        ml = []
+        for sq in ss
+            for mv in moves(b)
+                if to(mv) == sq
+                    push!(ml, mv)
+                end
             end
         end
+        return ml
     end
-    return ml
+    find_moves_to_squareset(board, attacked_but_undefended(board, -sidetomove(board))) # moves that capture undefended pieces
+
+else
+    process_commands()
 end
-find_moves_to_squareset(board, attacked_but_undefended(board, -sidetomove(board))) # moves that capture undefended pieces
