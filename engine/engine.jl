@@ -96,8 +96,13 @@ function find_captures(B)
 end
 
 function find_checks(b)
-    checks = filter(m -> ischeck(domove(b, m)) && isempty(attacked_but_undefended(b,sidetomove(b))), moves(b))
+    checks = filter(m -> ischeck(domove(b, m)) && isempty(attacked_but_undefended(domove(b, m),sidetomove(b))), moves(b))
     return checks
+end
+
+function find_attacks(b)
+    threats = filter(m -> !isempty(attacked_but_undefended(domove(b, m),-sidetomove(b))) && isempty(attacked_but_undefended(domove(b, m),sidetomove(b))), moves(b))
+    return threats
 end
 
 function calculate_best_move(board_)
@@ -125,13 +130,24 @@ function calculate_best_move(board_)
         return mv |> tostring
     end
     # do a capture if possible
-    hanging = find_hanging(board_)
-    if !isempty(hanging)
-        println("move ", hanging[1])
-        mv = hanging[1]
+    captures = find_captures(board_)
+    if !isempty(captures)
+        println("capture ", captures[1])
+        mv = captures[1]
         domove!(board_, mv)
         return mv |> tostring
     end
+
+    
+    # find threats
+    threats = find_attacks(board_)
+    if !isempty(threats)
+        mv = rand(threats)
+        println("threat ", mv)
+        domove!(board_, mv)
+        return mv |> tostring
+    end
+
     # do check if possible
 
     checks = find_checks(board_)
@@ -141,16 +157,15 @@ function calculate_best_move(board_)
         domove!(board_, mv)
         return mv |> tostring
     end
-    captures = find_captures(board_)
-    if !isempty(captures)
-        println("capture ", captures[1])
-        mv = captures[1]
+    
+    hanging = find_hanging(board_)
+    if !isempty(hanging)
+        println("move ", hanging[1])
+        mv = hanging[1]
         domove!(board_, mv)
         return mv |> tostring
     end
-    # checks
-    # 
-    
+
     # do a random move
     mv = moves(board_) |> rand 
     domove!(board_, mv)
