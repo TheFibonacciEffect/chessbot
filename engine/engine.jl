@@ -5,15 +5,15 @@ using Infiltrator
 # piece_values = (:BISHOP => 3, :KNIGHT => 3, :PAWN => 1, :QUEEN => 9, :ROOK => 5, :KING => 1000)
 piece_values = Dict(BISHOP => 3, KNIGHT => 3, PAWN => 1, QUEEN => 9, ROOK => 5, KING => 1000)
 
-# function moves_to_square(B, sq)
-#     mvs = []
-#     for mv in moves(B)
-#         if to(mv) == sq
-#             push!(mvs, mv)
-#         end
-#     end
-#     return mvs
-# end
+function moves_to_square(B, sq)
+    mvs = []
+    for mv in moves(B)
+        if to(mv) == sq
+            push!(mvs, mv)
+        end
+    end
+    return mvs
+end
 
 # function most_value(B, ss)
 #     max_val = 0
@@ -31,25 +31,25 @@ piece_values = Dict(BISHOP => 3, KNIGHT => 3, PAWN => 1, QUEEN => 9, ROOK => 5, 
 #     return max_sq
 # end
 
-# function attacked_but_undefended(board, color)
-# 	attacker = -color  # The opposite color
+function attacked_but_undefended(board, color)
+	attacker = -color  # The opposite color
 	
-# 	# Find all attacked squares
-# 	attacked = SS_EMPTY  # The empty square set
-# 	for s ∈ pieces(board, attacker)
-# 		attacked = attacked ∪ attacksfrom(board, s)
-# 	end
+	# Find all attacked squares
+	attacked = SS_EMPTY  # The empty square set
+	for s ∈ pieces(board, attacker)
+		attacked = attacked ∪ attacksfrom(board, s)
+	end
 	
-# 	# Find all defended squares
-# 	defended = SS_EMPTY
-# 	for s ∈ pieces(board, color)
-# 		defended = defended ∪ attacksfrom(board, s)
-# 	end
+	# Find all defended squares
+	defended = SS_EMPTY
+	for s ∈ pieces(board, color)
+		defended = defended ∪ attacksfrom(board, s)
+	end
 	
-# 	# Return all attacked, but undefended squares containing pieces of
-# 	# the desired color:
-# 	attacked ∩ -defended ∩ pieces(board, color)
-# end
+	# Return all attacked, but undefended squares containing pieces of
+	# the desired color:
+	attacked ∩ -defended ∩ pieces(board, color)
+end
 
 # function find_hanging(B)
 #     # it doesn't check again if the piece is still hanging after the move
@@ -74,35 +74,35 @@ piece_values = Dict(BISHOP => 3, KNIGHT => 3, PAWN => 1, QUEEN => 9, ROOK => 5, 
 #     return mvs
 # end
 
-# function find_captures(B)
-#     colour = sidetomove(B)
-#     hanging_pieces = attacked_but_undefended(B, -colour)
-#     if isempty(hanging_pieces)
-#         return []
-#     end
+function find_captures(B)
+    colour = sidetomove(B)
+    hanging_pieces = attacked_but_undefended(B, -colour)
+    if isempty(hanging_pieces)
+        return []
+    end
 
-#     # choose one at random
-#     mvs = []
-#     for sq = hanging_pieces
-#         for mv in moves(B)
-#             if to(mv) == sq #move the piece away
-#                 push!(mvs, mv)
-#             end
-#         end
-#     end
-#     println("capture hanging pieces: ", mvs)
-#     return mvs
-# end
+    # choose one at random
+    mvs = []
+    for sq = hanging_pieces
+        for mv in moves(B)
+            if to(mv) == sq #move the piece away
+                push!(mvs, mv)
+            end
+        end
+    end
+    println("capture hanging pieces: ", mvs)
+    return mvs
+end
 
-# function find_checks(b)
-#     checks = filter(m -> ischeck(domove(b, m)) && isempty(attacked_but_undefended(domove(b, m),sidetomove(b))), moves(b))
-#     return checks
-# end
+function find_checks(b)
+    checks = filter(m -> ischeck(domove(b, m)) && isempty(attacked_but_undefended(domove(b, m),sidetomove(b))), moves(b))
+    return checks
+end
 
-# function find_attacks(b)
-#     threats = filter(m -> !isempty(attacked_but_undefended(domove(b, m),-sidetomove(b))) && isempty(attacked_but_undefended(domove(b, m),sidetomove(b))), moves(b))
-#     return threats
-# end
+function find_defense(b)
+    threats = filter(m -> !isempty(attacked_but_undefended(domove(b, m),-sidetomove(b))) && isempty(attacked_but_undefended(domove(b, m),sidetomove(b))), moves(b))
+    return threats
+end
 
 # function calculate_best_move(board_)
 #     # Return the best move as a string in UCI format
@@ -254,8 +254,6 @@ end
 #     # Implement your own move undo logic here.
 # end
 
-# board = fromfen("r1bqk2r/pp3pbp/3pp1p1/2p4P/2PnP3/3P2P1/PP2NPB1/R1BQK2R b KQkq - 1 11") 
-# @time find_best_move(board)
 
 # Wait for UCI commands from the GUI and process them
 function process_commands()
@@ -313,5 +311,27 @@ function process_commands()
     end
 end
 
+board = fromfen("rnbqkbnr/pp1p1ppp/8/3pp3/3P4/5Q2/PPPP1PPP/RNB1KBNR w KQkq - 0 1")
+# board = fromfen("r1bqk2r/pp3pbp/3pp1p1/2p4P/2PnP3/3P2P1/PP2NPB1/R1BQK2R b KQkq - 1 11") 
+# @time find_best_move(board)
 # Start processing UCI commands
-process_commands()
+# process_commands()
+find_defense(board)
+find_captures(board)
+find_checks(board)
+attacked_but_undefended(board, sidetomove(board)) # hanging pieces
+attacked_but_undefended(board, -sidetomove(board)) # threats
+
+
+function find_moves_to_squareset(b,ss)
+    ml = []
+    for sq in ss
+        for mv in moves(b)
+            if to(mv) == sq
+                push!(ml, mv)
+            end
+        end
+    end
+    return ml
+end
+find_moves_to_squareset(board, attacked_but_undefended(board, -sidetomove(board))) # moves that capture undefended pieces
