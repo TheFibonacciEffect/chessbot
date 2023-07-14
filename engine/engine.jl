@@ -95,6 +95,11 @@ function find_captures(B)
     return mvs
 end
 
+function find_checks(b)
+    checks = filter(m -> ischeck(domove(b, m)) && isempty(attacked_but_undefended(b,sidetomove(b))), moves(b))
+    return checks
+end
+
 function calculate_best_move(board_)
     # Return the best move as a string in UCI format
 
@@ -127,7 +132,15 @@ function calculate_best_move(board_)
         domove!(board_, mv)
         return mv |> tostring
     end
+    # do check if possible
 
+    checks = find_checks(board_)
+    if !isempty(checks)
+        mv = rand(checks)
+        println("check ", mv)
+        domove!(board_, mv)
+        return mv |> tostring
+    end
     captures = find_captures(board_)
     if !isempty(captures)
         println("capture ", captures[1])
@@ -136,7 +149,7 @@ function calculate_best_move(board_)
         return mv |> tostring
     end
     # checks
-    # filter(m -> ischeck(domove(b, m)), moves(b))
+    # 
     
     # do a random move
     mv = moves(board_) |> rand 
