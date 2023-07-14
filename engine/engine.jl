@@ -1,6 +1,7 @@
 using Chess
 using Chess.Book
 using Infiltrator
+using Random
 
 # piece_values = (:BISHOP => 3, :KNIGHT => 3, :PAWN => 1, :QUEEN => 9, :ROOK => 5, :KING => 1000)
 piece_values = Dict(BISHOP => 3, KNIGHT => 3, PAWN => 1, QUEEN => 9, ROOK => 5, KING => 1000)
@@ -90,7 +91,6 @@ function find_captures(B)
             end
         end
     end
-    println("capture hanging pieces: ", mvs)
     return mvs
 end
 
@@ -183,26 +183,26 @@ function evaluate_position(board)
     for s ∈ pieces(board, c)
         val += piece_values[ptype(pieceon(board, s))]
     end
-    for s ∈ pieces(board, c)
+    for s ∈ pieces(board, -c)
         val -= piece_values[ptype(pieceon(board, s))]
     end
-    return 0
+    return val
 end
 
-function alpha_beta(board, depth, alpha, beta, maximizing_player_colour)
-    if depth == 0
+function alpha_beta(board, depth, alpha, beta, maximizing_player)
+    if depth == 0 || isterminal(board)
         return evaluate_position(board)
     end
     
-    if maximizing_player_colour == sidetomove(board)
+    if maximizing_player
         max_eval = -Inf
         for move in moves(board)
             u = domove!(board, move)
             eval = alpha_beta(board, depth - 1, alpha, beta, false)
             undomove!(board, u)
             max_eval = max(max_eval, eval)
-            alpha = max(alpha, eval)
-            if beta <= alpha
+            alpha = max(alpha, max_eval)
+            if beta < max_eval
                 break
             end
         end
@@ -215,7 +215,7 @@ function alpha_beta(board, depth, alpha, beta, maximizing_player_colour)
             undomove!(board, u)
             min_eval = min(min_eval, eval)
             beta = min(beta, eval)
-            if beta <= alpha
+            if min_eval < alpha
                 break
             end
         end
@@ -226,15 +226,16 @@ end
 function find_best_move(board)
     best_eval = -Inf
     best_move = nothing
-    for move in moves(board)
-        u = domove(board, move)
+    for move in union(find_defense(board),find_captures(board),find_checks(board), shuffle(moves(board)))
+        u = domove!(board, move)
         eval = alpha_beta(board, MAX_DEPTH, -Inf, Inf, false)
-        # undomove(board, u)
+        undomove!(board, u)
         if eval > best_eval
             best_eval = eval
             best_move = move
         end
     end
+    println("best eval: ", best_eval)
     return best_move |> tostring
 end
 
@@ -311,9 +312,9 @@ function process_commands()
     end
 end
 
-board = fromfen("rnbqkbnr/pp1p1ppp/8/3pp3/3P4/5Q2/PPPP1PPP/RNB1KBNR w KQkq - 0 1")
+@show board = fromfen("rnbqkbnr/pp1p1ppp/8/3pp3/3P4/5Q2/PPPP1PPP/RNB1KBNR w KQkq - 0 1")
 # board = fromfen("r1bqk2r/pp3pbp/3pp1p1/2p4P/2PnP3/3P2P1/PP2NPB1/R1BQK2R b KQkq - 1 11") 
-# @time find_best_move(board)
+@show find_best_move(board)
 # Start processing UCI commands
 # process_commands()
 find_defense(board)
